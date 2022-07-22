@@ -9,19 +9,22 @@
 namespace Staempfli\MailCatcher\Transport;
 
 use Magento\Framework\Mail\Message;
+use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Framework\Mail\TransportInterface;
+use Magento\Framework\Message\MessageInterface;
 use Staempfli\MailCatcher\Config\CatcherConfig;
 use Staempfli\MailCatcher\Logger\MailCatcherLogger;
 use Staempfli\MailCatcher\Repository\MailCatcherRepository;
 
 class MailCatcherTransportProxy implements TransportInterface
 {
+
     /**
      * @var MailCatcherLogger
      */
     private $mailCatcherLogger;
     /**
-     * @var Message
+     * @var MessageInterface
      */
     private $message;
     /**
@@ -38,7 +41,7 @@ class MailCatcherTransportProxy implements TransportInterface
     private $mailCatcherRepository;
 
     public function __construct(
-        Message $message,
+        MessageInterface $message,
         MailCatcherLogger $mailCatcherLogger,
         TransportInterface $originalTransport,
         CatcherConfig $catcherConfig,
@@ -60,8 +63,8 @@ class MailCatcherTransportProxy implements TransportInterface
     {
         if ($this->shouldCatchEmail()) {
             $this->mailCatcherLogger->addInfo(
-                "Recipients: " . implode(',', $this->message->getRecipients()) . PHP_EOL .
-                "Subject: " . $this->message->getSubject() . PHP_EOL .
+                "Recipients: " . implode(',', $this->getMessage()->getRecipients()) . PHP_EOL .
+                "Subject: " . $this->getMessage()->getSubject() . PHP_EOL .
                 "Body: " . $this->getBodyAsString() . PHP_EOL
             );
             return;
@@ -77,7 +80,7 @@ class MailCatcherTransportProxy implements TransportInterface
         if (!$this->catcherConfig->isCatcherEnabled()) {
             return false;
         }
-        if ($this->areAllRecipientsAllowed($this->message->getRecipients())) {
+        if ($this->areAllRecipientsAllowed($this->getMessage()->getRecipients())) {
             return false;
         }
         return true;
@@ -97,7 +100,7 @@ class MailCatcherTransportProxy implements TransportInterface
 
     private function getBodyAsString()
     {
-        $body = $this->message->getBody();
+        $body = $this->getMessage()->getBody();
         if ($body instanceof \Zend_Mime_Part) {
             return $body->getContent();
         }
